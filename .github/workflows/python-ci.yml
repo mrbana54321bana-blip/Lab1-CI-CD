@@ -65,4 +65,4 @@ jobs:
       - name: Deploy (placeholder)
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         run: |
-          echo "Deploy placeholder: тут був би справжній деплой"
+          echo "Success"
