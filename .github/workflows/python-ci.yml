@@ -11,11 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # --- Checkout ---
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # --- Set up Python ---
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -25,26 +23,46 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          pip install pytest
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install numpy matplotlib pytest
+          fi
 
       # --- TEST ---
-      - name: Run tests (pytest if exists, else compile check)
+      - name: Run tests (pytest if exists, else syntax check)
         run: |
           if ls -1 tests/test*.py >/dev/null 2>&1 || ls -1 test*.py >/dev/null 2>&1; then
             pytest -q
           else
-            echo "No tests found -> running basic syntax check for script.py"
+            echo "No tests found -> running basic syntax check"
             python -m py_compile script.py
           fi
 
       # --- BUILD ---
-      - name: Build step (compile to bytecode)
+      - name: Build step (compile)
         run: |
           python -m compileall script.py
 
-      # --- DEPLOY ---
-      - name: Deploy (placeholder)
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      # --- "DEPLOY" / RUN DEMO ---
+      - name: Run script (headless) and save plot
+        env:
+          MPLBACKEND: Agg
         run: |
-          echo "Deploy placeholder: тут був би справжній деплой (docker push / scp / cloud deploy)"
+          python script.py
+          # якщо ти додаси збереження у файл — тут з'явиться PNG
+
+      # Якщо у скрипті є збереження, можна підхопити результат як artifact
+      - name: Upload plot artifact (if exists)
+        uses: actions/upload-artifact@v4
+        with:
+          name: plots
+          path: |
+            *.png
+            *.jpg
+          if-no-files-found: ignore
+
+      - name: Deploy (placeholder)
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          echo "Deploy placeholder: тут був би справжній деплой"
